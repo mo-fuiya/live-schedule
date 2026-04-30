@@ -5,11 +5,38 @@
 <h1 id="title"></h1>
 <p id="date"></p>
 
+<h2>出演アイドル</h2>
+<ul id="idolList"></ul>
+
 <script>
   const params = new URLSearchParams(window.location.search);
+  const title = params.get("title");
+  const date = params.get("date");
 
-  document.getElementById("title").textContent = params.get("title");
-  document.getElementById("date").textContent = params.get("date");
+  document.getElementById("title").textContent = title;
+  document.getElementById("date").textContent = date;
+
+  fetch("data.json")
+    .then(res => res.json())
+    .then(data => {
+      const event = data.events.find(e => e.title === title);
+
+      const idolList = document.getElementById("idolList");
+
+      event.idolIds.forEach(id => {
+        const idol = data.idols.find(i => i.id === id);
+
+        const li = document.createElement("li");
+
+        // クリックでアイドルページへ
+        const a = document.createElement("a");
+        a.textContent = idol.name;
+        a.href = `idol.html?id=${idol.id}`;
+
+        li.appendChild(a);
+        idolList.appendChild(li);
+      });
+    });
 </script>
 
 </body>
