@@ -1,7 +1,26 @@
-eventClick: function(info) {
-  const title = info.event.title;
-  const date = info.event.startStr;
+document.addEventListener('DOMContentLoaded', function () {
 
-  // URLに情報つけて移動
-  window.location.href = `event.html?title=${title}&date=${date}`;
-}
+  const events = [
+    {
+      title: "ライブイベント1",
+      start: "2026-05-10"
+    }
+  ];
+
+  const calendar = new FullCalendar.Calendar(
+    document.getElementById('calendar'),
+    {
+      initialView: 'dayGridMonth',
+      events: events,
+
+      eventClick: function(info) {
+        const title = info.event.title;
+        const date = info.event.startStr;
+
+        window.location.href = `event.html?title=${title}&date=${date}`;
+      }
+    }
+  );
+
+  calendar.render();
+});
