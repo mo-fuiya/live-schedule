@@ -19,19 +19,21 @@
 
       const eventList = document.getElementById("eventList");
 
-      data.events.forEach(e => {
-        if (e.idolIds.includes(idolId)) {
-          const li = document.createElement("li");
+     data.events.forEach(e => {
+  e.appearances.forEach(a => {
+    if (a.idolId === idolId) {
+      const li = document.createElement("li");
 
-          const a = document.createElement("a");
-          a.textContent = e.title;
-          a.href = `event.html?title=${e.title}&date=${e.date}`;
+      li.innerHTML = `
+        ${e.title}<br>
+        ${a.startTime} - ${a.endTime}<br>
+        特典: ${a.benefits.join(", ")}
+      `;
 
-          li.appendChild(a);
-          eventList.appendChild(li);
-        }
-      });
-    });
+      eventList.appendChild(li);
+    }
+  });
+});
 </script>
 
 </body>
