@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1 id="name"></h1>
+
+<h2>出演イベント</h2>
+<ul id="eventList"></ul>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const idolId = Number(params.get("id"));
+
+  fetch("data.json")
+    .then(res => res.json())
+    .then(data => {
+      const idol = data.idols.find(i => i.id === idolId);
+      document.getElementById("name").textContent = idol.name;
+
+      const eventList = document.getElementById("eventList");
+
+      data.events.forEach(e => {
+        if (e.idolIds.includes(idolId)) {
+          const li = document.createElement("li");
+
+          const a = document.createElement("a");
+          a.textContent = e.title;
+          a.href = `event.html?title=${e.title}&date=${e.date}`;
+
+          li.appendChild(a);
+          eventList.appendChild(li);
+        }
+      });
+    });
+</script>
+
+</body>
+</html>
