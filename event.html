@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1 id="title"></h1>
+<p id="date"></p>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+
+  document.getElementById("title").textContent = params.get("title");
+  document.getElementById("date").textContent = params.get("date");
+</script>
+
+</body>
+</html>
