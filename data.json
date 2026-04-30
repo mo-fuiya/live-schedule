@@ -8,13 +8,20 @@
       "id": 1,
       "title": "ライブイベント1",
       "date": "2026-05-10",
-      "idolIds": [1, 2]
-    },
-    {
-      "id": 2,
-      "title": "フェスイベント",
-      "date": "2026-05-15",
-      "idolIds": [2]
+      "appearances": [
+        {
+          "idolId": 1,
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "benefits": ["写メ券", "動画券"]
+        },
+        {
+          "idolId": 2,
+          "startTime": "18:30",
+          "endTime": "19:00",
+          "benefits": ["写メ券"]
+        }
+      ]
     }
   ]
 }
