@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
     {
       title: "ライブイベント1",
       start: "2026-05-10"
+    },
+    {
+      title: "フェスイベント",
+      start: "2026-05-15"
     }
   ];
 
