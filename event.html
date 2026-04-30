@@ -8,35 +8,33 @@
 <h2>出演アイドル</h2>
 <ul id="idolList"></ul>
 
+<h2>出演情報</h2>
+<ul id="appearanceList"></ul>
+
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const title = params.get("title");
-  const date = params.get("date");
+fetch("data.json")
+  .then(res => res.json())
+  .then(data => {
+    const params = new URLSearchParams(window.location.search);
+    const title = params.get("title");
 
-  document.getElementById("title").textContent = title;
-  document.getElementById("date").textContent = date;
+    const event = data.events.find(e => e.title === title);
+    const list = document.getElementById("appearanceList");
 
-  fetch("data.json")
-    .then(res => res.json())
-    .then(data => {
-      const event = data.events.find(e => e.title === title);
+    event.appearances.forEach(a => {
+      const idol = data.idols.find(i => i.id === a.idolId);
 
-      const idolList = document.getElementById("idolList");
+      const li = document.createElement("li");
 
-      event.idolIds.forEach(id => {
-        const idol = data.idols.find(i => i.id === id);
+      li.innerHTML = `
+        <strong>${idol.name}</strong><br>
+        ${a.startTime} - ${a.endTime}<br>
+        特典: ${a.benefits.join(", ")}
+      `;
 
-        const li = document.createElement("li");
-
-        // クリックでアイドルページへ
-        const a = document.createElement("a");
-        a.textContent = idol.name;
-        a.href = `./idol.html?id=${idol.id}`;
-
-        li.appendChild(a);
-        idolList.appendChild(li);
-      });
+      list.appendChild(li);
     });
+  });
 </script>
 
 </body>
