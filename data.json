@@ -1,7 +1,8 @@
 {
   "idols": [
     { "id": 1, "name": "アイドルA" },
-    { "id": 2, "name": "アイドルB" }
+    { "id": 2, "name": "アイドルB" },
+    { "id": 3, "name": "アイドルC" }
   ],
   "events": [
     {
@@ -20,6 +21,25 @@
           "startTime": "18:30",
           "endTime": "19:00",
           "benefits": ["写メ券"]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "フェスイベント",
+      "date": "2026-05-15",
+      "appearances": [
+        {
+          "idolId": 2,
+          "startTime": "17:00",
+          "endTime": "17:25",
+          "benefits": ["動画券"]
+        },
+        {
+          "idolId": 3,
+          "startTime": "17:30",
+          "endTime": "18:00",
+          "benefits": ["写メ券", "チェキ券"]
         }
       ]
     }
