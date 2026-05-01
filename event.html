@@ -4,47 +4,78 @@
   <meta charset="UTF-8">
   <title>イベント詳細</title>
 </head>
+
 <body>
+
 <a href="index.html">← トップに戻る</a>
+
 <h1 id="title"></h1>
 <p id="date"></p>
 
 <h2>出演アイドル</h2>
 <ul id="appearanceList"></ul>
 
-<script>
-const params = new URLSearchParams(window.location.search);
-const title = params.get("title");
-const date = params.get("date");
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-document.getElementById("title").textContent = title;
-document.getElementById("date").textContent = date;
+  const firebaseConfig = {
+    apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
+    authDomain: "fumiya-calender.firebaseapp.com",
+    projectId: "fumiya-calender",
+    storageBucket: "fumiya-calender.firebasestorage.app",
+    messagingSenderId: "946430755375",
+    appId: "1:946430755375:web:b64afd78461cb94143fcda"
+  };
 
-fetch("data.json?nocache=" + new Date().getTime())
-  .then(res => res.json())
-  .then(data => {
-    const event = data.events.find(e => e.title === title);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const params = new URLSearchParams(window.location.search);
+  const title = params.get("title");
+  const date = params.get("date");
+
+  document.getElementById("title").textContent = title;
+  document.getElementById("date").textContent = date;
+
+  document.addEventListener("DOMContentLoaded", async function () {
+
+    const querySnapshot = await getDocs(collection(db, "events"));
+
     const list = document.getElementById("appearanceList");
 
-    event.appearances.forEach(a => {
-      const idol = data.idols.find(i => i.id === a.idolId);
+    querySnapshot.forEach((doc) => {
+      const e = doc.data();
 
-      const li = document.createElement("li");
+      if (e.title === title) {
 
-      const link = document.createElement("a");
-      link.textContent = idol.name;
-      link.href = `idol.html?id=${idol.id}`;
+        e.appearances?.forEach(a => {
 
-      const info = document.createElement("div");
-      info.innerHTML = `
-        出演時間: ${a.startTime} - ${a.endTime}<br>
-        特典: ${a.benefits.join(", ")}
-      `;
+          const li = document.createElement("li");
 
-      li.appendChild(link);
-      li.appendChild(info);
-      list.appendChild(li);
+          const link = document.createElement("a");
+          link.textContent = a.idolName || ("ID:" + a.idolId);
+
+          // 👇 idolNameしかない場合は飛べないので注意
+          if (a.idolId) {
+            link.href = `idol.html?id=${a.idolId}`;
+          }
+
+          const info = document.createElement("div");
+          info.innerHTML = `
+            ${a.startTime || "-"} - ${a.endTime || "-"}<br>
+            特典: ${a.benefits?.join(", ") || "-"}
+          `;
+
+          li.appendChild(link);
+          li.appendChild(info);
+          list.appendChild(li);
+
+        });
+
+      }
     });
+
   });
 </script>
 
