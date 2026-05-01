@@ -104,31 +104,44 @@
       calendar.addEventSource(events);
     });
 
-    // 🔍 検索
-    const searchInput = document.getElementById("searchInput");
-    const searchResults = document.getElementById("searchResults");
+   // 🔍 検索
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
 
-    searchInput.addEventListener("input", function () {
-      const keyword = searchInput.value.toLowerCase();
-      searchResults.innerHTML = "";
+searchInput.addEventListener("input", function () {
+  const keyword = searchInput.value.toLowerCase();
+  searchResults.innerHTML = "";
 
-      if (keyword === "") return;
+  if (keyword === "") return;
 
-      allEventsData.forEach(event => {
-        if (event.title.toLowerCase().includes(keyword)) {
-          const li = document.createElement("li");
+  allEventsData.forEach(event => {
+    // イベント名検索
+    if (event.title.toLowerCase().includes(keyword)) {
+      const li = document.createElement("li");
 
-          const link = document.createElement("a");
-          link.textContent = "【イベント】" + event.title;
-          link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
+      const link = document.createElement("a");
+      link.textContent = "【イベント】" + event.title;
+      link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
 
-          li.appendChild(link);
-          searchResults.appendChild(li);
-        }
-      });
+      li.appendChild(link);
+      searchResults.appendChild(li);
+    }
+
+    // アイドル名検索
+    event.appearances?.forEach(a => {
+      if (a.idolName && a.idolName.toLowerCase().includes(keyword)) {
+        const li = document.createElement("li");
+
+        const link = document.createElement("a");
+        link.textContent = "【アイドル】" + a.idolName;
+        link.href = `idol.html?id=${a.idolId}`;
+
+        li.appendChild(link);
+        searchResults.appendChild(li);
+      }
     });
-
   });
+});
 </script>
 
 </body>
