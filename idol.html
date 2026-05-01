@@ -10,6 +10,7 @@
 
 <h1 id="name"></h1>
 <button id="favoriteBtn">⭐ お気に入り</button>
+
 <h2>出演イベント一覧</h2>
 <ul id="eventList"></ul>
 
@@ -27,6 +28,27 @@ fetch("data.json?nocache=" + new Date().getTime())
   .then(data => {
     const idol = data.idols.find(i => i.id === idolId);
     document.getElementById("name").textContent = idol.name;
+
+    // ⭐ お気に入り機能ここから
+    const favoriteBtn = document.getElementById("favoriteBtn");
+    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+    if (favorites.includes(idolId)) {
+      favoriteBtn.textContent = "★ お気に入り済み";
+    }
+
+    favoriteBtn.addEventListener("click", function () {
+      if (favorites.includes(idolId)) {
+        favorites = favorites.filter(id => id !== idolId);
+        favoriteBtn.textContent = "⭐ お気に入り";
+      } else {
+        favorites.push(idolId);
+        favoriteBtn.textContent = "★ お気に入り済み";
+      }
+
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+    });
+    // ⭐ ここまで
 
     const eventList = document.getElementById("eventList");
     const calendarEvents = [];
