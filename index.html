@@ -2,24 +2,134 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>アイドルカレンダー</title>
+  <title>アイドルライブカレンダー</title>
 
   <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<button id="showFavorites">お気に入りだけ表示</button>
-<button id="showAll">全て表示</button>
-  <h1>アイドルライブカレンダー</h1>
+
+<h1>アイドルライブカレンダー</h1>
 
 <input type="text" id="searchInput" placeholder="検索（アイドル・イベント）">
 <ul id="searchResults"></ul>
 
+<button id="showFavorites">お気に入りだけ表示</button>
+<button id="showAll">全て表示</button>
+
 <div id="calendar"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<!-- Firebase + カレンダー -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
+    authDomain: "fumiya-calender.firebaseapp.com",
+    projectId: "fumiya-calender",
+    storageBucket: "fumiya-calender.firebasestorage.app",
+    messagingSenderId: "946430755375",
+    appId: "1:946430755375:web:b64afd78461cb94143fcda"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let allEventsData = [];
+
+  async function loadEvents() {
+    const querySnapshot = await getDocs(collection(db, "events"));
+
+    const events = [];
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+
+      allEventsData.push(data);
+
+      events.push({
+        title: data.title,
+        start: data.date
+      });
+    });
+
+    return events;
+  }
+
+  document.addEventListener("DOMContentLoaded", async function () {
+
+    const events = await loadEvents();
+
+    const calendar = new FullCalendar.Calendar(
+      document.getElementById("calendar"),
+      {
+        initialView: "dayGridMonth",
+        events: events,
+
+        eventClick: function(info) {
+          const title = info.event.title;
+          const date = info.event.startStr;
+
+          window.location.href = `event.html?title=${encodeURIComponent(title)}&date=${date}`;
+        }
+      }
+    );
+
+    calendar.render();
+
+    // ⭐ お気に入りフィルター
+    document.getElementById("showFavorites").addEventListener("click", function () {
+
+      const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+      const filtered = allEventsData.filter(e =>
+        e.appearances?.some(a => favorites.includes(a.idolId))
+      );
+
+      const newEvents = filtered.map(e => ({
+        title: e.title,
+        start: e.date
+      }));
+
+      calendar.removeAllEvents();
+      calendar.addEventSource(newEvents);
+    });
+
+    document.getElementById("showAll").addEventListener("click", function () {
+      calendar.removeAllEvents();
+      calendar.addEventSource(events);
+    });
+
+    // 🔍 検索
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
+
+    searchInput.addEventListener("input", function () {
+      const keyword = searchInput.value.toLowerCase();
+      searchResults.innerHTML = "";
+
+      if (keyword === "") return;
+
+      allEventsData.forEach(event => {
+        if (event.title.toLowerCase().includes(keyword)) {
+          const li = document.createElement("li");
+
+          const link = document.createElement("a");
+          link.textContent = "【イベント】" + event.title;
+          link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
+
+          li.appendChild(link);
+          searchResults.appendChild(li);
+        }
+      });
+    });
+
+  });
+</script>
+
 </body>
 </html>
