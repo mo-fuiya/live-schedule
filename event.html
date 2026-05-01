@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>イベント詳細</title>
+</head>
 <body>
 
 <h1 id="title"></h1>
@@ -11,6 +15,10 @@
 <script>
 const params = new URLSearchParams(window.location.search);
 const title = params.get("title");
+const date = params.get("date");
+
+document.getElementById("title").textContent = title;
+document.getElementById("date").textContent = date;
 
 fetch("data.json?nocache=" + new Date().getTime())
   .then(res => res.json())
@@ -27,43 +35,14 @@ fetch("data.json?nocache=" + new Date().getTime())
       link.textContent = idol.name;
       link.href = `idol.html?id=${idol.id}`;
 
-      li.appendChild(link);
-
-      li.innerHTML += `
-        <br>
+      const info = document.createElement("div");
+      info.innerHTML = `
         出演時間: ${a.startTime} - ${a.endTime}<br>
         特典: ${a.benefits.join(", ")}
       `;
 
-      list.appendChild(li);
-    });
-  });
-</script>
-
-<h2>出演情報</h2>
-<ul id="appearanceList"></ul>
-
-<script>
-fetch("data.json")
-  .then(res => res.json())
-  .then(data => {
-    const params = new URLSearchParams(window.location.search);
-    const title = params.get("title");
-
-    const event = data.events.find(e => e.title === title);
-    const list = document.getElementById("appearanceList");
-
-    event.appearances.forEach(a => {
-      const idol = data.idols.find(i => i.id === a.idolId);
-
-      const li = document.createElement("li");
-
-      li.innerHTML = `
-        <strong>${idol.name}</strong><br>
-        ${a.startTime} - ${a.endTime}<br>
-        特典: ${a.benefits.join(", ")}
-      `;
-
+      li.appendChild(link);
+      li.appendChild(info);
       list.appendChild(li);
     });
   });
