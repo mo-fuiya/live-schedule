@@ -2,27 +2,26 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>アイドルライブカレンダー</title>
+  <title>アイドル詳細</title>
 
-  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 </head>
 
 <body>
 
-<h1>アイドルライブカレンダー</h1>
+<a href="index.html">← トップに戻る</a>
 
-<input type="text" id="searchInput" placeholder="検索（アイドル・イベント）">
-<ul id="searchResults"></ul>
+<h1 id="name"></h1>
+<button id="favoriteBtn">⭐ お気に入り</button>
 
-<button id="showFavorites">お気に入りだけ表示</button>
-<button id="showAll">全て表示</button>
+<h2>出演イベント一覧</h2>
+<ul id="eventList"></ul>
 
+<h2>出演カレンダー</h2>
 <div id="calendar"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
-<!-- Firebase + カレンダー -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -39,94 +38,81 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let allEventsData = [];
-
-  async function loadEvents() {
-    const querySnapshot = await getDocs(collection(db, "events"));
-
-    const events = [];
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-
-      allEventsData.push(data);
-
-      events.push({
-        title: data.title,
-        start: data.date
-      });
-    });
-
-    return events;
-  }
+  const params = new URLSearchParams(window.location.search);
+  const idolId = Number(params.get("id"));
 
   document.addEventListener("DOMContentLoaded", async function () {
 
-    const events = await loadEvents();
+    const querySnapshot = await getDocs(collection(db, "events"));
+
+    const eventList = document.getElementById("eventList");
+    const calendarEvents = [];
+
+    // ⭐ お気に入り機能
+    const favoriteBtn = document.getElementById("favoriteBtn");
+    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+    if (favorites.includes(idolId)) {
+      favoriteBtn.textContent = "★ お気に入り済み";
+    }
+
+    favoriteBtn.addEventListener("click", function () {
+      if (favorites.includes(idolId)) {
+        favorites = favorites.filter(id => id !== idolId);
+        favoriteBtn.textContent = "⭐ お気に入り";
+      } else {
+        favorites.push(idolId);
+        favoriteBtn.textContent = "★ お気に入り済み";
+      }
+
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+    });
+
+    querySnapshot.forEach((doc) => {
+      const e = doc.data();
+
+      e.appearances?.forEach(a => {
+        if (a.idolId === idolId) {
+
+          // 一覧表示
+          const li = document.createElement("li");
+
+          const link = document.createElement("a");
+          link.textContent = e.title;
+          link.href = `event.html?title=${encodeURIComponent(e.title)}&date=${e.date}`;
+
+          const info = document.createElement("div");
+          info.innerHTML = `
+            出演時間: ${a.startTime || "-"} - ${a.endTime || "-"}<br>
+            特典: ${a.benefits?.join(", ") || "-"}
+          `;
+
+          li.appendChild(link);
+          li.appendChild(info);
+          eventList.appendChild(li);
+
+          // カレンダー
+          calendarEvents.push({
+            title: e.title,
+            start: e.date,
+            url: `event.html?title=${encodeURIComponent(e.title)}&date=${e.date}`
+          });
+        }
+      });
+    });
 
     const calendar = new FullCalendar.Calendar(
       document.getElementById("calendar"),
       {
         initialView: "dayGridMonth",
-        events: events,
-
-        eventClick: function(info) {
-          const title = info.event.title;
-          const date = info.event.startStr;
-
-          window.location.href = `event.html?title=${encodeURIComponent(title)}&date=${date}`;
-        }
+        events: calendarEvents
       }
     );
 
     calendar.render();
 
-    // ⭐ お気に入りフィルター
-    document.getElementById("showFavorites").addEventListener("click", function () {
-
-      const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-
-      const filtered = allEventsData.filter(e =>
-        e.appearances?.some(a => favorites.includes(a.idolId))
-      );
-
-      const newEvents = filtered.map(e => ({
-        title: e.title,
-        start: e.date
-      }));
-
-      calendar.removeAllEvents();
-      calendar.addEventSource(newEvents);
-    });
-
-    document.getElementById("showAll").addEventListener("click", function () {
-      calendar.removeAllEvents();
-      calendar.addEventSource(events);
-    });
-
-    // 🔍 検索
-    const searchInput = document.getElementById("searchInput");
-    const searchResults = document.getElementById("searchResults");
-
-    searchInput.addEventListener("input", function () {
-      const keyword = searchInput.value.toLowerCase();
-      searchResults.innerHTML = "";
-
-      if (keyword === "") return;
-
-      allEventsData.forEach(event => {
-        if (event.title.toLowerCase().includes(keyword)) {
-          const li = document.createElement("li");
-
-          const link = document.createElement("a");
-          link.textContent = "【イベント】" + event.title;
-          link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
-
-          li.appendChild(link);
-          searchResults.appendChild(li);
-        }
-      });
-    });
+    // 名前表示（簡易）
+    document.getElementById("name").textContent = "アイドルID: " + idolId;
 
   });
 </script>
