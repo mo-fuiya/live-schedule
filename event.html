@@ -6,7 +6,39 @@
 <p id="date"></p>
 
 <h2>出演アイドル</h2>
-<ul id="idolList"></ul>
+<ul id="appearanceList"></ul>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const title = params.get("title");
+
+fetch("data.json?nocache=" + new Date().getTime())
+  .then(res => res.json())
+  .then(data => {
+    const event = data.events.find(e => e.title === title);
+    const list = document.getElementById("appearanceList");
+
+    event.appearances.forEach(a => {
+      const idol = data.idols.find(i => i.id === a.idolId);
+
+      const li = document.createElement("li");
+
+      const link = document.createElement("a");
+      link.textContent = idol.name;
+      link.href = `idol.html?id=${idol.id}`;
+
+      li.appendChild(link);
+
+      li.innerHTML += `
+        <br>
+        出演時間: ${a.startTime} - ${a.endTime}<br>
+        特典: ${a.benefits.join(", ")}
+      `;
+
+      list.appendChild(li);
+    });
+  });
+</script>
 
 <h2>出演情報</h2>
 <ul id="appearanceList"></ul>
