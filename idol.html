@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>アイドルページ</title>
+  <title>アイドル詳細</title>
 
-  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 </head>
-
 <body>
 
 <h1 id="name"></h1>
@@ -15,7 +13,7 @@
 <h2>出演イベント一覧</h2>
 <ul id="eventList"></ul>
 
-<h2>カレンダー</h2>
+<h2>出演カレンダー</h2>
 <div id="calendar"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
@@ -27,8 +25,6 @@ const idolId = Number(params.get("id"));
 fetch("data.json?nocache=" + new Date().getTime())
   .then(res => res.json())
   .then(data => {
-
-    // アイドル名表示
     const idol = data.idols.find(i => i.id === idolId);
     document.getElementById("name").textContent = idol.name;
 
@@ -38,32 +34,35 @@ fetch("data.json?nocache=" + new Date().getTime())
     data.events.forEach(e => {
       e.appearances.forEach(a => {
         if (a.idolId === idolId) {
-
-          // 一覧表示
           const li = document.createElement("li");
 
-          li.innerHTML = `
-            ${e.title}<br>
-            ${a.startTime} - ${a.endTime}<br>
+          const link = document.createElement("a");
+          link.textContent = e.title;
+          link.href = `event.html?title=${encodeURIComponent(e.title)}&date=${e.date}`;
+
+          const info = document.createElement("div");
+          info.innerHTML = `
+            出演時間: ${a.startTime} - ${a.endTime}<br>
             特典: ${a.benefits.join(", ")}
           `;
 
+          li.appendChild(link);
+          li.appendChild(info);
           eventList.appendChild(li);
 
-          // カレンダー用
           calendarEvents.push({
             title: e.title,
-            start: e.date
+            start: e.date,
+            url: `event.html?title=${encodeURIComponent(e.title)}&date=${e.date}`
           });
         }
       });
     });
 
-    // カレンダー生成
     const calendar = new FullCalendar.Calendar(
-      document.getElementById('calendar'),
+      document.getElementById("calendar"),
       {
-        initialView: 'dayGridMonth',
+        initialView: "dayGridMonth",
         events: calendarEvents
       }
     );
