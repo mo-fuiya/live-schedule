@@ -1,67 +1,76 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>アイドルページ</title>
+
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+</head>
+
 <body>
 
 <h1 id="name"></h1>
 
-<h2>出演イベント</h2>
-<h2>カレンダー</h2>
-<div id="calendar"></div>
+<h2>出演イベント一覧</h2>
 <ul id="eventList"></ul>
 
+<h2>カレンダー</h2>
+<div id="calendar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const idolId = Number(params.get("id"));
+const params = new URLSearchParams(window.location.search);
+const idolId = Number(params.get("id"));
 
-  fetch("data.json")
-    .then(res => res.json())
-    .then(data => {
-      const idol = data.idols.find(i => i.id === idolId);
-      document.getElementById("name").textContent = idol.name;
+fetch("data.json?nocache=" + new Date().getTime())
+  .then(res => res.json())
+  .then(data => {
 
-      const eventList = document.getElementById("eventList");
+    // アイドル名表示
+    const idol = data.idols.find(i => i.id === idolId);
+    document.getElementById("name").textContent = idol.name;
 
-     data.events.forEach(e => {
-  e.appearances.forEach(a => {
-    if (a.idolId === idolId) {
-      const li = document.createElement("li");
+    const eventList = document.getElementById("eventList");
+    const calendarEvents = [];
 
-      li.innerHTML = `
-        ${e.title}<br>
-        ${a.startTime} - ${a.endTime}<br>
-        特典: ${a.benefits.join(", ")}
-      `;
+    data.events.forEach(e => {
+      e.appearances.forEach(a => {
+        if (a.idolId === idolId) {
 
-      eventList.appendChild(li);
-    }
-  });
-}); 
-const events = [];
+          // 一覧表示
+          const li = document.createElement("li");
 
-data.events.forEach(e => {
-  e.appearances.forEach(a => {
-    if (a.idolId === idolId) {
-      events.push({
-        title: e.title,
-        start: e.date
+          li.innerHTML = `
+            ${e.title}<br>
+            ${a.startTime} - ${a.endTime}<br>
+            特典: ${a.benefits.join(", ")}
+          `;
+
+          eventList.appendChild(li);
+
+          // カレンダー用
+          calendarEvents.push({
+            title: e.title,
+            start: e.date
+          });
+        }
       });
-    }
+    });
+
+    // カレンダー生成
+    const calendar = new FullCalendar.Calendar(
+      document.getElementById('calendar'),
+      {
+        initialView: 'dayGridMonth',
+        events: calendarEvents
+      }
+    );
+
+    calendar.render();
   });
-});
-
-// カレンダー表示
-const calendar = new FullCalendar.Calendar(
-  document.getElementById('calendar'),
-  {
-    initialView: 'dayGridMonth',
-    events: events
-  }
-);
-
-calendar.render();
 </script>
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 </body>
 </html>
