@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>アイドルライブカレンダー</title>
 
-  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 </head>
 
@@ -22,7 +21,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
-<!-- Firebase + カレンダー -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -40,6 +38,7 @@
   const db = getFirestore(app);
 
   let allEventsData = [];
+  let calendar;
 
   async function loadEvents() {
     const querySnapshot = await getDocs(collection(db, "events"));
@@ -64,7 +63,7 @@
 
     const events = await loadEvents();
 
-    const calendar = new FullCalendar.Calendar(
+    calendar = new FullCalendar.Calendar(
       document.getElementById("calendar"),
       {
         initialView: "dayGridMonth",
@@ -104,44 +103,48 @@
       calendar.addEventSource(events);
     });
 
-   // 🔍 検索
-const searchInput = document.getElementById("searchInput");
-const searchResults = document.getElementById("searchResults");
+    // 🔍 検索（イベント + アイドル）
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
 
-searchInput.addEventListener("input", function () {
-  const keyword = searchInput.value.toLowerCase();
-  searchResults.innerHTML = "";
+    searchInput.addEventListener("input", function () {
+      const keyword = searchInput.value.toLowerCase();
+      searchResults.innerHTML = "";
 
-  if (keyword === "") return;
+      if (keyword === "") return;
 
-  allEventsData.forEach(event => {
-    // イベント名検索
-    if (event.title.toLowerCase().includes(keyword)) {
-      const li = document.createElement("li");
+      allEventsData.forEach(event => {
 
-      const link = document.createElement("a");
-      link.textContent = "【イベント】" + event.title;
-      link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
+        // イベント検索
+        if (event.title.toLowerCase().includes(keyword)) {
+          const li = document.createElement("li");
 
-      li.appendChild(link);
-      searchResults.appendChild(li);
-    }
+          const link = document.createElement("a");
+          link.textContent = "【イベント】" + event.title;
+          link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
 
-    // アイドル名検索
-    event.appearances?.forEach(a => {
-      if (a.idolName && a.idolName.toLowerCase().includes(keyword)) {
-        const li = document.createElement("li");
+          li.appendChild(link);
+          searchResults.appendChild(li);
+        }
 
-        const link = document.createElement("a");
-        link.textContent = "【アイドル】" + a.idolName;
-        link.href = `idol.html?id=${a.idolId}`;
+        // アイドル検索
+        event.appearances?.forEach(a => {
+          if (a.idolName && a.idolName.toLowerCase().includes(keyword)) {
+            const li = document.createElement("li");
 
-        li.appendChild(link);
-        searchResults.appendChild(li);
-      }
+            const link = document.createElement("a");
+            link.textContent = "【アイドル】" + a.idolName;
+            link.href = `idol.html?id=${a.idolId}`;
+
+            li.appendChild(link);
+            searchResults.appendChild(li);
+          }
+        });
+
+      });
     });
+
   });
-});
 </script>
 
 </body>
