@@ -4,16 +4,11 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(res => res.json())
     .then(data => {
 
-      const events = data.events.map(event => ({
-        title: event.title,
-        start: event.date
-      }));
-
       const calendar = new FullCalendar.Calendar(
         document.getElementById('calendar'),
         {
           initialView: 'dayGridMonth',
-          events: events,
+          events: convertEvents(data.events),
 
           eventClick: function(info) {
             const title = info.event.title;
@@ -26,6 +21,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
       calendar.render();
 
+      function convertEvents(events) {
+        return events.map(e => ({
+          title: e.title,
+          start: e.date
+        }));
+      }
+
+      // ⭐ お気に入り表示
+      document.getElementById("showFavorites").addEventListener("click", function () {
+        const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+        const filtered = data.events.filter(e =>
+          e.appearances.some(a => favorites.includes(a.idolId))
+        );
+
+        calendar.removeAllEvents();
+        calendar.addEventSource(convertEvents(filtered));
+      });
+
+      // 🔄 全表示
+      document.getElementById("showAll").addEventListener("click", function () {
+        calendar.removeAllEvents();
+        calendar.addEventSource(convertEvents(data.events));
+      });
+
+      // 🔍 検索（←これを残す）
       const searchInput = document.getElementById("searchInput");
       const searchResults = document.getElementById("searchResults");
 
