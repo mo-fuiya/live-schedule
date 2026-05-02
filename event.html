@@ -12,6 +12,7 @@
 
     a {
       color: #0066cc;
+      text-decoration: none;
     }
 
     table {
@@ -23,7 +24,6 @@
     th, td {
       border: 1px solid #ddd;
       padding: 10px;
-      text-align: left;
     }
 
     th {
@@ -80,30 +80,37 @@
   document.getElementById("title").textContent = title;
   document.getElementById("date").textContent = date;
 
-  const querySnapshot = await getDocs(collection(db, "events"));
-  const tbody = document.getElementById("timetableBody");
+  document.addEventListener("DOMContentLoaded", async function () {
 
-  querySnapshot.forEach((doc) => {
-    const event = doc.data();
+    const querySnapshot = await getDocs(collection(db, "events"));
+    const tbody = document.getElementById("timetableBody");
 
-    if (event.title === title) {
-      event.appearances?.forEach(a => {
-        const tr = document.createElement("tr");
+    querySnapshot.forEach((doc) => {
+      const event = doc.data();
 
-        tr.innerHTML = `
-          <td>
-            <a href="idol.html?id=${a.idolId}">
-              ${a.idolName || "-"}
-            </a>
-          </td>
-          <td>${a.startTime || "-"} - ${a.endTime || "-"}</td>
-          <td>${a.benefitTime || "-"}</td>
-          <td>${a.benefits?.join(", ") || "-"}</td>
-        `;
+      if (event.title === title) {
 
-        tbody.appendChild(tr);
-      });
-    }
+        event.appearances?.forEach(a => {
+
+          const tr = document.createElement("tr");
+
+          tr.innerHTML = `
+            <td>
+              <a href="idol.html?id=${a.idolId}">
+                ${a.idolName || "-"}
+              </a>
+            </td>
+            <td>${a.startTime || "-"} - ${a.endTime || "-"}</td>
+            <td>${a.benefitTime || "-"}</td>
+            <td>${a.benefits?.join(", ") || "-"}</td>
+          `;
+
+          tbody.appendChild(tr);
+        });
+
+      }
+    });
+
   });
 </script>
 
