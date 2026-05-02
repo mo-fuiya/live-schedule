@@ -4,10 +4,14 @@
   <meta charset="UTF-8">
   <title>イベント詳細</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
+      padding: 16px;
+      margin: 0;
+      background: #f7f7f7;
     }
 
     a {
@@ -15,23 +19,64 @@
       text-decoration: none;
     }
 
+    h1 {
+      font-size: 22px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
+      background: white;
       margin-top: 16px;
     }
 
     th, td {
       border: 1px solid #ddd;
       padding: 10px;
+      font-size: 14px;
     }
 
     th {
-      background: #f2f2f2;
+      background: #f0f0f0;
     }
 
     tr:nth-child(even) {
       background: #fafafa;
+    }
+
+    /* スマホ対応 */
+    @media (max-width: 600px) {
+      table, thead, tbody, tr, th, td {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 12px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px;
+      }
+
+      td {
+        border: none;
+        padding: 6px 8px;
+      }
+
+      td::before {
+        font-weight: bold;
+        display: inline-block;
+        width: 90px;
+      }
+
+      td:nth-child(1)::before { content: "グループ"; }
+      td:nth-child(2)::before { content: "出演時間"; }
+      td:nth-child(3)::before { content: "特典会"; }
+      td:nth-child(4)::before { content: "入特"; }
     }
   </style>
 </head>
@@ -90,11 +135,12 @@
 
       if (event.title === title) {
 
+        // ⭐ 時間順ソート
         const sorted = event.appearances
-  ?.slice() // 元データ壊さない
-  .sort((a, b) => a.startTime.localeCompare(b.startTime));
+          ?.slice()
+          .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-sorted?.forEach(a => {
+        sorted?.forEach(a => {
 
           const tr = document.createElement("tr");
 
