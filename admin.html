@@ -34,33 +34,26 @@
 <h3>入特</h3>
 
 <label><input type="checkbox" class="benefitCheck" value="サインなしチェキ券"> サインなしチェキ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="サインなしチェキ券" min="1" value="1">
-<br>
+枚数 <input type="number" class="benefitCount" data-benefit="サインなしチェキ券" min="1" value="1"><br>
 
 <label><input type="checkbox" class="benefitCheck" value="サインありチェキ券"> サインありチェキ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="サインありチェキ券" min="1" value="1">
-<br>
+枚数 <input type="number" class="benefitCount" data-benefit="サインありチェキ券" min="1" value="1"><br>
 
 <label><input type="checkbox" class="benefitCheck" value="コメントありチェキ券"> コメントありチェキ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="コメントありチェキ券" min="1" value="1">
-<br>
+枚数 <input type="number" class="benefitCount" data-benefit="コメントありチェキ券" min="1" value="1"><br>
 
 <label><input type="checkbox" class="benefitCheck" value="写メ券"> 写メ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1">
-<br>
+枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1"><br>
 
 <label><input type="checkbox" class="benefitCheck" value="動画券"> 動画券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1">
-<br>
+枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1"><br>
 
 <label><input type="checkbox" class="benefitCheck" value="私物サイン券"> 私物サイン券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="私物サイン券" min="1" value="1">
-<br><br>
+枚数 <input type="number" class="benefitCount" data-benefit="私物サイン券" min="1" value="1"><br><br>
 
 <label><input type="checkbox" id="otherCheck"> その他</label>
 <input id="otherText" placeholder="入特名">
-枚数 <input type="number" id="otherCount" min="1" value="1">
-<br>
+枚数 <input type="number" id="otherCount" min="1" value="1"><br>
 <textarea id="otherDescription" placeholder="その他入特の説明"></textarea>
 
 <br><br>
@@ -69,7 +62,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
@@ -138,11 +131,12 @@
   }
 
   document.getElementById("submitBtn").addEventListener("click", async () => {
+
     const title = document.getElementById("title").value;
     const date = document.getElementById("date").value;
 
     const idolId = Number(idolSelect.value);
-    const idol = idols.find(i => i.idolId === idolId);
+    const idol = idols.find(i => Number(i.idolId) === idolId);
 
     const startTime = document.getElementById("startTime").value;
     const endTime = document.getElementById("endTime").value;
@@ -155,20 +149,51 @@
       return;
     }
 
-    await addDoc(collection(db, "events"), {
-      title: title,
-      date: date,
-      appearances: [
-        {
-          idolId: idolId,
-          idolName: idol.name,
-          startTime: startTime,
-          endTime: endTime,
-          benefitTime: benefitTime,
-          benefits: benefits
-        }
-      ]
+    const appearance = {
+      idolId: idolId,
+      idolName: idol.name,
+      startTime: startTime,
+      endTime: endTime,
+      benefitTime: benefitTime,
+      benefits: benefits
+    };
+
+    const eventsSnapshot = await getDocs(collection(db, "events"));
+
+    let existingDocId = null;
+    let existingAppearances = [];
+
+    eventsSnapshot.forEach(docSnap => {
+      const event = docSnap.data();
+
+      if (event.title === title && event.date === date) {
+        existingDocId = docSnap.id;
+        existingAppearances = event.appearances || [];
+      }
     });
+
+    if (existingDocId) {
+
+      const alreadyExists = existingAppearances.some(a => a.idolId === idolId);
+
+      if (alreadyExists) {
+        alert("このイベントには既に登録されています");
+        return;
+      }
+
+      await updateDoc(doc(db, "events", existingDocId), {
+        appearances: arrayUnion(appearance)
+      });
+
+    } else {
+
+      await addDoc(collection(db, "events"), {
+        title: title,
+        date: date,
+        appearances: [appearance]
+      });
+
+    }
 
     alert("登録完了！");
   });
