@@ -3,8 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <title>アイドル詳細</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      margin: 0;
+      background: #f7f7f7;
+    }
+
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    section {
+      background: white;
+      padding: 12px;
+      margin-top: 16px;
+      border-radius: 8px;
+    }
+
+    li {
+      margin-bottom: 12px;
+    }
+
+    #calendar {
+      background: white;
+      padding: 8px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 
 <body>
@@ -14,11 +46,20 @@
 <h1 id="name"></h1>
 <button id="favoriteBtn">⭐ お気に入り</button>
 
-<h2>出演イベント一覧</h2>
-<ul id="eventList"></ul>
+<section>
+  <h2>出演イベント一覧</h2>
+  <ul id="eventList"></ul>
+</section>
 
-<h2>出演カレンダー</h2>
-<div id="calendar"></div>
+<section>
+  <h2>入特一覧</h2>
+  <ul id="benefitList"></ul>
+</section>
+
+<section>
+  <h2>出演カレンダー</h2>
+  <div id="calendar"></div>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
@@ -42,13 +83,15 @@
   const idolId = Number(params.get("id"));
 
   document.addEventListener("DOMContentLoaded", async function () {
-
     const querySnapshot = await getDocs(collection(db, "events"));
 
     const eventList = document.getElementById("eventList");
+    const benefitList = document.getElementById("benefitList");
     const calendarEvents = [];
+    const benefitSet = new Set();
 
-    // ⭐ お気に入り機能
+    let idolName = "";
+
     const favoriteBtn = document.getElementById("favoriteBtn");
     let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
@@ -69,37 +112,66 @@
     });
 
     querySnapshot.forEach((doc) => {
-      const e = doc.data();
+      const event = doc.data();
 
-      e.appearances?.forEach(a => {
+      event.appearances?.forEach(a => {
         if (a.idolId === idolId) {
+          idolName = a.idolName;
 
-          // 一覧表示
           const li = document.createElement("li");
 
           const link = document.createElement("a");
-          link.textContent = e.title;
-          link.href = `event.html?title=${encodeURIComponent(e.title)}&date=${e.date}`;
+          link.textContent = event.title;
+          link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
 
           const info = document.createElement("div");
           info.innerHTML = `
             出演時間: ${a.startTime || "-"} - ${a.endTime || "-"}<br>
-            特典: ${a.benefits?.join(", ") || "-"}
+            特典会: ${a.benefitTime || "-"}<br>
+            入特: ${renderBenefitText(a.benefits)}
           `;
 
           li.appendChild(link);
           li.appendChild(info);
           eventList.appendChild(li);
 
-          // カレンダー
           calendarEvents.push({
-            title: e.title,
-            start: e.date,
-            url: `event.html?title=${encodeURIComponent(e.title)}&date=${e.date}`
+            title: event.title,
+            start: event.date,
+            url: `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`
+          });
+
+          a.benefits?.forEach(b => {
+            let name = "";
+            let description = "";
+
+            if (typeof b === "string") {
+              name = b;
+              description = "説明なし";
+            } else {
+              name = b.name;
+              description = b.description || "説明なし";
+            }
+
+            const key = `${name}-${description}`;
+
+            if (!benefitSet.has(key)) {
+              benefitSet.add(key);
+
+              const benefitLi = document.createElement("li");
+              benefitLi.innerHTML = `
+                <strong>${name}</strong><br>
+                ${description}
+              `;
+
+              benefitList.appendChild(benefitLi);
+            }
           });
         }
       });
     });
+
+    document.getElementById("name").textContent = idolName || "アイドル詳細";
 
     const calendar = new FullCalendar.Calendar(
       document.getElementById("calendar"),
@@ -110,11 +182,16 @@
     );
 
     calendar.render();
-
-    // 名前表示（簡易）
-    document.getElementById("name").textContent = "アイドルID: " + idolId;
-
   });
+
+  function renderBenefitText(benefits) {
+    if (!benefits || benefits.length === 0) return "-";
+
+    return benefits.map(b => {
+      if (typeof b === "string") return b;
+      return `${b.name}${b.count}枚`;
+    }).join(", ");
+  }
 </script>
 
 </body>
