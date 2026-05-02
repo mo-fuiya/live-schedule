@@ -33,33 +33,35 @@
 
 <h3>入特</h3>
 
-<label>
-  <input type="checkbox" class="benefitCheck" value="チェキ券">
-  チェキ券
-</label>
-枚数 <input type="number" class="benefitCount" data-benefit="チェキ券" min="1" value="1">
+<label><input type="checkbox" class="benefitCheck" value="サインなしチェキ券"> サインなしチェキ券</label>
+枚数 <input type="number" class="benefitCount" data-benefit="サインなしチェキ券" min="1" value="1">
 <br>
 
-<label>
-  <input type="checkbox" class="benefitCheck" value="写メ券">
-  写メ券
-</label>
+<label><input type="checkbox" class="benefitCheck" value="サインありチェキ券"> サインありチェキ券</label>
+枚数 <input type="number" class="benefitCount" data-benefit="サインありチェキ券" min="1" value="1">
+<br>
+
+<label><input type="checkbox" class="benefitCheck" value="コメントありチェキ券"> コメントありチェキ券</label>
+枚数 <input type="number" class="benefitCount" data-benefit="コメントありチェキ券" min="1" value="1">
+<br>
+
+<label><input type="checkbox" class="benefitCheck" value="写メ券"> 写メ券</label>
 枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1">
 <br>
 
-<label>
-  <input type="checkbox" class="benefitCheck" value="動画券">
-  動画券
-</label>
+<label><input type="checkbox" class="benefitCheck" value="動画券"> 動画券</label>
 枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1">
 <br>
 
-<label>
-  <input type="checkbox" id="otherCheck" value="その他">
-  その他
-</label>
-<input id="otherText" placeholder="例：サイン券">
+<label><input type="checkbox" class="benefitCheck" value="私物サイン券"> 私物サイン券</label>
+枚数 <input type="number" class="benefitCount" data-benefit="私物サイン券" min="1" value="1">
+<br><br>
+
+<label><input type="checkbox" id="otherCheck"> その他</label>
+<input id="otherText" placeholder="入特名">
 枚数 <input type="number" id="otherCount" min="1" value="1">
+<br>
+<textarea id="otherDescription" placeholder="その他入特の説明"></textarea>
 
 <br><br>
 
@@ -110,18 +112,25 @@
         const countInput = document.querySelector(`.benefitCount[data-benefit="${name}"]`);
         const count = Number(countInput.value);
 
-        benefits.push(`${name}${count}枚`);
+        benefits.push({
+          name: name,
+          count: count,
+          description: ""
+        });
       }
     });
 
-    const otherCheck = document.getElementById("otherCheck");
-
-    if (otherCheck.checked) {
+    if (document.getElementById("otherCheck").checked) {
       const otherText = document.getElementById("otherText").value;
       const otherCount = Number(document.getElementById("otherCount").value);
+      const otherDescription = document.getElementById("otherDescription").value;
 
       if (otherText) {
-        benefits.push(`${otherText}${otherCount}枚`);
+        benefits.push({
+          name: otherText,
+          count: otherCount,
+          description: otherDescription
+        });
       }
     }
 
@@ -129,7 +138,6 @@
   }
 
   document.getElementById("submitBtn").addEventListener("click", async () => {
-
     const title = document.getElementById("title").value;
     const date = document.getElementById("date").value;
 
@@ -141,6 +149,11 @@
     const benefitTime = document.getElementById("benefitTime").value;
 
     const benefits = getSelectedBenefits();
+
+    if (!title || !date || !idol) {
+      alert("イベント名・日付・出演アイドルを入力してください");
+      return;
+    }
 
     await addDoc(collection(db, "events"), {
       title: title,
