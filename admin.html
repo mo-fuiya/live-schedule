@@ -7,6 +7,8 @@
 
 <body>
 
+<a href="index.html">← トップに戻る</a>
+
 <h1>イベント登録</h1>
 
 <p>イベント名</p>
@@ -15,11 +17,10 @@
 <p>日付</p>
 <input id="date" type="date">
 
-<p>アイドル名</p>
-<input id="idolName">
-
-<p>アイドルID</p>
-<input id="idolId" type="number">
+<p>出演アイドル</p>
+<select id="idolSelect">
+  <option value="">選択してください</option>
+</select>
 
 <p>出演開始</p>
 <input id="startTime" placeholder="18:00">
@@ -30,8 +31,35 @@
 <p>特典会時間</p>
 <input id="benefitTime" placeholder="20:00-21:00">
 
-<p>特典（カンマ区切り）</p>
-<input id="benefits" placeholder="写メ券,動画券">
+<h3>入特</h3>
+
+<label>
+  <input type="checkbox" class="benefitCheck" value="チェキ券">
+  チェキ券
+</label>
+枚数 <input type="number" class="benefitCount" data-benefit="チェキ券" min="1" value="1">
+<br>
+
+<label>
+  <input type="checkbox" class="benefitCheck" value="写メ券">
+  写メ券
+</label>
+枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1">
+<br>
+
+<label>
+  <input type="checkbox" class="benefitCheck" value="動画券">
+  動画券
+</label>
+枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1">
+<br>
+
+<label>
+  <input type="checkbox" id="otherCheck" value="その他">
+  その他
+</label>
+<input id="otherText" placeholder="例：サイン券">
+枚数 <input type="number" id="otherCount" min="1" value="1">
 
 <br><br>
 
@@ -39,7 +67,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
@@ -53,20 +81,66 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  const idolSelect = document.getElementById("idolSelect");
+  let idols = [];
+
+  async function loadIdols() {
+    const snapshot = await getDocs(collection(db, "idols"));
+
+    snapshot.forEach(doc => {
+      const idol = doc.data();
+      idols.push(idol);
+
+      const option = document.createElement("option");
+      option.value = idol.idolId;
+      option.textContent = idol.name;
+
+      idolSelect.appendChild(option);
+    });
+  }
+
+  loadIdols();
+
+  function getSelectedBenefits() {
+    const benefits = [];
+
+    document.querySelectorAll(".benefitCheck").forEach(check => {
+      if (check.checked) {
+        const name = check.value;
+        const countInput = document.querySelector(`.benefitCount[data-benefit="${name}"]`);
+        const count = Number(countInput.value);
+
+        benefits.push(`${name}${count}枚`);
+      }
+    });
+
+    const otherCheck = document.getElementById("otherCheck");
+
+    if (otherCheck.checked) {
+      const otherText = document.getElementById("otherText").value;
+      const otherCount = Number(document.getElementById("otherCount").value);
+
+      if (otherText) {
+        benefits.push(`${otherText}${otherCount}枚`);
+      }
+    }
+
+    return benefits;
+  }
+
   document.getElementById("submitBtn").addEventListener("click", async () => {
 
     const title = document.getElementById("title").value;
     const date = document.getElementById("date").value;
 
-    const idolName = document.getElementById("idolName").value;
-    const idolId = Number(document.getElementById("idolId").value);
+    const idolId = Number(idolSelect.value);
+    const idol = idols.find(i => i.idolId === idolId);
 
     const startTime = document.getElementById("startTime").value;
     const endTime = document.getElementById("endTime").value;
-
     const benefitTime = document.getElementById("benefitTime").value;
 
-    const benefits = document.getElementById("benefits").value.split(",");
+    const benefits = getSelectedBenefits();
 
     await addDoc(collection(db, "events"), {
       title: title,
@@ -74,7 +148,7 @@
       appearances: [
         {
           idolId: idolId,
-          idolName: idolName,
+          idolName: idol.name,
           startTime: startTime,
           endTime: endTime,
           benefitTime: benefitTime,
