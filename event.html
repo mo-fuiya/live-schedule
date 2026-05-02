@@ -90,7 +90,11 @@
 
       if (event.title === title) {
 
-        event.appearances?.forEach(a => {
+        const sorted = event.appearances
+  ?.slice() // 元データ壊さない
+  .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+sorted?.forEach(a => {
 
           const tr = document.createElement("tr");
 
