@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>イベント詳細</title>
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -44,7 +43,6 @@
       background: #fafafa;
     }
 
-    /* スマホ対応 */
     @media (max-width: 600px) {
       table, thead, tbody, tr, th, td {
         display: block;
@@ -125,8 +123,20 @@
   document.getElementById("title").textContent = title;
   document.getElementById("date").textContent = date;
 
-  document.addEventListener("DOMContentLoaded", async function () {
+  function renderBenefits(benefits, idolId) {
+    if (!benefits || benefits.length === 0) return "-";
 
+    return benefits.map(b => {
+      if (typeof b === "string") {
+        return `<a href="idol.html?id=${idolId}">${b}</a>`;
+      }
+
+      const label = `${b.name}${b.count}枚`;
+      return `<a href="idol.html?id=${idolId}">${label}</a>`;
+    }).join(", ");
+  }
+
+  document.addEventListener("DOMContentLoaded", async function () {
     const querySnapshot = await getDocs(collection(db, "events"));
     const tbody = document.getElementById("timetableBody");
 
@@ -134,14 +144,11 @@
       const event = doc.data();
 
       if (event.title === title) {
-
-        // ⭐ 時間順ソート
         const sorted = event.appearances
           ?.slice()
           .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         sorted?.forEach(a => {
-
           const tr = document.createElement("tr");
 
           tr.innerHTML = `
@@ -152,15 +159,13 @@
             </td>
             <td>${a.startTime || "-"} - ${a.endTime || "-"}</td>
             <td>${a.benefitTime || "-"}</td>
-            <td>${a.benefits?.join(", ") || "-"}</td>
+            <td>${renderBenefits(a.benefits, a.idolId)}</td>
           `;
 
           tbody.appendChild(tr);
         });
-
       }
     });
-
   });
 </script>
 
