@@ -3,6 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <title>イベント詳細</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: #0066cc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f2f2f2;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+  </style>
 </head>
 
 <body>
@@ -12,8 +43,19 @@
 <h1 id="title"></h1>
 <p id="date"></p>
 
-<h2>出演アイドル</h2>
-<ul id="appearanceList"></ul>
+<h2>タイムテーブル</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>グループ</th>
+      <th>出演時間</th>
+      <th>特典会時間</th>
+      <th>入特</th>
+    </tr>
+  </thead>
+  <tbody id="timetableBody"></tbody>
+</table>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -38,44 +80,30 @@
   document.getElementById("title").textContent = title;
   document.getElementById("date").textContent = date;
 
-  document.addEventListener("DOMContentLoaded", async function () {
+  const querySnapshot = await getDocs(collection(db, "events"));
+  const tbody = document.getElementById("timetableBody");
 
-    const querySnapshot = await getDocs(collection(db, "events"));
+  querySnapshot.forEach((doc) => {
+    const event = doc.data();
 
-    const list = document.getElementById("appearanceList");
+    if (event.title === title) {
+      event.appearances?.forEach(a => {
+        const tr = document.createElement("tr");
 
-    querySnapshot.forEach((doc) => {
-      const e = doc.data();
+        tr.innerHTML = `
+          <td>
+            <a href="idol.html?id=${a.idolId}">
+              ${a.idolName || "-"}
+            </a>
+          </td>
+          <td>${a.startTime || "-"} - ${a.endTime || "-"}</td>
+          <td>${a.benefitTime || "-"}</td>
+          <td>${a.benefits?.join(", ") || "-"}</td>
+        `;
 
-      if (e.title === title) {
-
-        e.appearances?.forEach(a => {
-
-          const li = document.createElement("li");
-
-          const link = document.createElement("a");
-          link.textContent = a.idolName || ("ID:" + a.idolId);
-
-          // 👇 idolNameしかない場合は飛べないので注意
-          if (a.idolId) {
-            link.href = `idol.html?id=${a.idolId}`;
-          }
-
-          const info = document.createElement("div");
-          info.innerHTML = `
-            ${a.startTime || "-"} - ${a.endTime || "-"}<br>
-            特典: ${a.benefits?.join(", ") || "-"}
-          `;
-
-          li.appendChild(link);
-          li.appendChild(info);
-          list.appendChild(li);
-
-        });
-
-      }
-    });
-
+        tbody.appendChild(tr);
+      });
+    }
   });
 </script>
 
