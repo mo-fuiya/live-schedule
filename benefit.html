@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>入特詳細</title>
+</head>
+<body>
+
+<a href="index.html">← トップに戻る</a>
+
+<h1 id="benefitName"></h1>
+<p id="benefitCount"></p>
+<h2>説明</h2>
+<p id="benefitDescription"></p>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
+    authDomain: "fumiya-calender.firebaseapp.com",
+    projectId: "fumiya-calender",
+    storageBucket: "fumiya-calender.firebasestorage.app",
+    messagingSenderId: "946430755375",
+    appId: "1:946430755375:web:b64afd78461cb94143fcda"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const params = new URLSearchParams(window.location.search);
+  const idolId = Number(params.get("idolId"));
+  const index = Number(params.get("index"));
+
+  const snapshot = await getDocs(collection(db, "events"));
+
+  let found = null;
+
+  snapshot.forEach(doc => {
+    const event = doc.data();
+
+    event.appearances?.forEach(a => {
+      if (a.idolId === idolId && a.benefits?.[index]) {
+        found = a.benefits[index];
+      }
+    });
+  });
+
+  if (found) {
+    document.getElementById("benefitName").textContent = found.name;
+    document.getElementById("benefitCount").textContent = `${found.count}枚`;
+    document.getElementById("benefitDescription").textContent = found.description || "説明はありません";
+  } else {
+    document.getElementById("benefitName").textContent = "入特が見つかりません";
+  }
+</script>
+
+</body>
+</html>
