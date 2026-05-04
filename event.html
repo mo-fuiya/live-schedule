@@ -22,6 +22,15 @@
       font-size: 22px;
     }
 
+    .button {
+      display: inline-block;
+      padding: 8px 12px;
+      background: #333;
+      color: white;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -86,6 +95,8 @@
 <h1 id="title"></h1>
 <p id="date"></p>
 
+<a id="addGroupBtn" class="button">このイベントに出演グループを追加</a>
+
 <h2>タイムテーブル</h2>
 
 <table>
@@ -122,6 +133,9 @@
 
   document.getElementById("title").textContent = title;
   document.getElementById("date").textContent = date;
+
+  document.getElementById("addGroupBtn").href =
+    `admin.html?title=${encodeURIComponent(title)}&date=${date}`;
 
   function renderBenefits(benefits, idolId) {
     if (!benefits || benefits.length === 0) return "-";
