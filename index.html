@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>アイドルライブカレンダー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 </head>
@@ -38,16 +39,15 @@
   const db = getFirestore(app);
 
   let allEventsData = [];
+  let allIdolsData = [];
   let calendar;
 
   async function loadEvents() {
     const querySnapshot = await getDocs(collection(db, "events"));
-
     const events = [];
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-
       allEventsData.push(data);
 
       events.push({
@@ -59,8 +59,23 @@
     return events;
   }
 
-  document.addEventListener("DOMContentLoaded", async function () {
+  async function loadIdols() {
+    const querySnapshot = await getDocs(collection(db, "idols"));
 
+    querySnapshot.forEach((doc) => {
+      allIdolsData.push(doc.data());
+    });
+  }
+
+  function convertEvents(events) {
+    return events.map(e => ({
+      title: e.title,
+      start: e.date
+    }));
+  }
+
+  document.addEventListener("DOMContentLoaded", async function () {
+    await loadIdols();
     const events = await loadEvents();
 
     calendar = new FullCalendar.Calendar(
@@ -80,22 +95,15 @@
 
     calendar.render();
 
-    // ⭐ お気に入りフィルター
     document.getElementById("showFavorites").addEventListener("click", function () {
-
       const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
       const filtered = allEventsData.filter(e =>
-        e.appearances?.some(a => favorites.includes(a.idolId))
+        e.appearances?.some(a => favorites.includes(Number(a.idolId)))
       );
 
-      const newEvents = filtered.map(e => ({
-        title: e.title,
-        start: e.date
-      }));
-
       calendar.removeAllEvents();
-      calendar.addEventSource(newEvents);
+      calendar.addEventSource(convertEvents(filtered));
     });
 
     document.getElementById("showAll").addEventListener("click", function () {
@@ -103,20 +111,17 @@
       calendar.addEventSource(events);
     });
 
-    // 🔍 検索（イベント + アイドル）
     const searchInput = document.getElementById("searchInput");
     const searchResults = document.getElementById("searchResults");
 
     searchInput.addEventListener("input", function () {
-      const keyword = searchInput.value.toLowerCase();
+      const keyword = searchInput.value.toLowerCase().trim();
       searchResults.innerHTML = "";
 
       if (keyword === "") return;
 
       allEventsData.forEach(event => {
-
-        // イベント検索
-        if (event.title.toLowerCase().includes(keyword)) {
+        if (event.title && event.title.toLowerCase().includes(keyword)) {
           const li = document.createElement("li");
 
           const link = document.createElement("a");
@@ -126,24 +131,30 @@
           li.appendChild(link);
           searchResults.appendChild(li);
         }
+      });
 
-        // アイドル検索
-        event.appearances?.forEach(a => {
-          if (a.idolName && a.idolName.toLowerCase().includes(keyword)) {
-            const li = document.createElement("li");
+      allIdolsData.forEach(idol => {
+        const name = idol.name || "";
+        const kana = idol.kana || "";
+        const aliases = idol.aliases || [];
 
-            const link = document.createElement("a");
-            link.textContent = "【アイドル】" + a.idolName;
-            link.href = `idol.html?id=${a.idolId}`;
+        const isMatch =
+          name.toLowerCase().includes(keyword) ||
+          kana.toLowerCase().includes(keyword) ||
+          aliases.some(alias => String(alias).toLowerCase().includes(keyword));
 
-            li.appendChild(link);
-            searchResults.appendChild(li);
-          }
-        });
+        if (isMatch) {
+          const li = document.createElement("li");
 
+          const link = document.createElement("a");
+          link.textContent = "【アイドル】" + name;
+          link.href = `idol.html?id=${idol.idolId}`;
+
+          li.appendChild(link);
+          searchResults.appendChild(li);
+        }
       });
     });
-
   });
 </script>
 
