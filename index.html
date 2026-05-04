@@ -43,23 +43,27 @@
   let calendar;
 
   async function loadEvents() {
+    allEventsData = [];
+
     const querySnapshot = await getDocs(collection(db, "events"));
-    const events = [];
+    const calendarEvents = [];
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       allEventsData.push(data);
 
-      events.push({
+      calendarEvents.push({
         title: data.title,
         start: data.date
       });
     });
 
-    return events;
+    return calendarEvents;
   }
 
   async function loadIdols() {
+    allIdolsData = [];
+
     const querySnapshot = await getDocs(collection(db, "idols"));
 
     querySnapshot.forEach((doc) => {
@@ -72,6 +76,22 @@
       title: e.title,
       start: e.date
     }));
+  }
+
+  function normalizeText(text) {
+    return String(text || "").toLowerCase().trim();
+  }
+
+  function getAliases(idol) {
+    if (Array.isArray(idol.aliases)) {
+      return idol.aliases;
+    }
+
+    if (typeof idol.aliases === "string") {
+      return [idol.aliases];
+    }
+
+    return [];
   }
 
   document.addEventListener("DOMContentLoaded", async function () {
@@ -98,8 +118,8 @@
     document.getElementById("showFavorites").addEventListener("click", function () {
       const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
-      const filtered = allEventsData.filter(e =>
-        e.appearances?.some(a => favorites.includes(Number(a.idolId)))
+      const filtered = allEventsData.filter(event =>
+        event.appearances?.some(a => favorites.includes(Number(a.idolId)))
       );
 
       calendar.removeAllEvents();
@@ -115,13 +135,16 @@
     const searchResults = document.getElementById("searchResults");
 
     searchInput.addEventListener("input", function () {
-      const keyword = searchInput.value.toLowerCase().trim();
+      const keyword = normalizeText(searchInput.value);
       searchResults.innerHTML = "";
 
       if (keyword === "") return;
 
+      // イベント検索
       allEventsData.forEach(event => {
-        if (event.title && event.title.toLowerCase().includes(keyword)) {
+        const title = normalizeText(event.title);
+
+        if (title.includes(keyword)) {
           const li = document.createElement("li");
 
           const link = document.createElement("a");
@@ -133,21 +156,22 @@
         }
       });
 
+      // アイドル検索：idols コレクションだけを見る
       allIdolsData.forEach(idol => {
-        const name = idol.name || "";
-        const kana = idol.kana || "";
-        const aliases = idol.aliases || [];
+        const name = normalizeText(idol.name);
+        const kana = normalizeText(idol.kana);
+        const aliases = getAliases(idol).map(alias => normalizeText(alias));
 
         const isMatch =
-          name.toLowerCase().includes(keyword) ||
-          kana.toLowerCase().includes(keyword) ||
-          aliases.some(alias => String(alias).toLowerCase().includes(keyword));
+          name.includes(keyword) ||
+          kana.includes(keyword) ||
+          aliases.some(alias => alias.includes(keyword));
 
         if (isMatch) {
           const li = document.createElement("li");
 
           const link = document.createElement("a");
-          link.textContent = "【アイドル】" + name;
+          link.textContent = "【アイドル】" + idol.name;
           link.href = `idol.html?id=${idol.idolId}`;
 
           li.appendChild(link);
