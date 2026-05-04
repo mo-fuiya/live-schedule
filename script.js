@@ -1,87 +1,352 @@
-document.addEventListener('DOMContentLoaded', function () {
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>イベント登録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  fetch("data.json?nocache=" + new Date().getTime())
-    .then(res => res.json())
-    .then(data => {
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      background: #f7f7f7;
+    }
 
-      const calendar = new FullCalendar.Calendar(
-        document.getElementById('calendar'),
-        {
-          initialView: 'dayGridMonth',
-          events: convertEvents(data.events),
+    input, select, textarea {
+      width: 100%;
+      max-width: 420px;
+      padding: 8px;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
 
-          eventClick: function(info) {
-            const title = info.event.title;
-            const date = info.event.startStr;
+    button {
+      padding: 8px 12px;
+      margin: 4px 0;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-            window.location.href = `event.html?title=${encodeURIComponent(title)}&date=${date}`;
-          }
-        }
-      );
+    .section {
+      background: white;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 8px;
+    }
 
-      calendar.render();
+    #submitBtn {
+      background: #333;
+      color: white;
+      font-weight: bold;
+    }
 
-      function convertEvents(events) {
-        return events.map(e => ({
-          title: e.title,
-          start: e.date
-        }));
+    #idolSearchResults {
+      max-width: 420px;
+      background: white;
+      border: 1px solid #ddd;
+      padding: 0;
+      margin-top: -6px;
+      list-style: none;
+    }
+
+    #idolSearchResults li {
+      padding: 8px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    #idolSearchResults li:hover {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+
+<a href="index.html">← トップに戻る</a>
+
+<h1>イベント登録</h1>
+
+<div class="section">
+  <p>イベント名</p>
+  <input id="title">
+
+  <p>日付</p>
+  <input id="date" type="date">
+
+  <p>出演アイドル検索</p>
+  <input id="idolSearch" placeholder="アイドル名を入力">
+  <ul id="idolSearchResults"></ul>
+
+  <input type="hidden" id="idolId">
+  <input type="hidden" id="idolName">
+</div>
+
+<div class="section">
+  <h3>出演時間</h3>
+
+  <p>出演開始</p>
+  <select id="startTime"></select>
+
+  <p>出演終了</p>
+  <select id="endTime"></select>
+</div>
+
+<div class="section">
+  <h3>特典会時間</h3>
+
+  <p>特典会開始</p>
+  <select id="benefitStartTime"></select>
+
+  <p>特典会終了</p>
+  <select id="benefitEndTime"></select>
+</div>
+
+<div class="section">
+  <h3>入特</h3>
+
+  <label><input type="checkbox" class="benefitCheck" value="サインなしチェキ券"> サインなしチェキ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="サインなしチェキ券" min="1" value="1"><br>
+
+  <label><input type="checkbox" class="benefitCheck" value="サインありチェキ券"> サインありチェキ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="サインありチェキ券" min="1" value="1"><br>
+
+  <label><input type="checkbox" class="benefitCheck" value="コメントありチェキ券"> コメントありチェキ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="コメントありチェキ券" min="1" value="1"><br>
+
+  <label><input type="checkbox" class="benefitCheck" value="写メ券"> 写メ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1"><br>
+
+  <label><input type="checkbox" class="benefitCheck" value="動画券"> 動画券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1"><br>
+
+  <label><input type="checkbox" class="benefitCheck" value="私物サイン券"> 私物サイン券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="私物サイン券" min="1" value="1"><br><br>
+
+  <label><input type="checkbox" id="otherCheck"> その他</label>
+  <input id="otherText" placeholder="入特名">
+  枚数 <input type="number" id="otherCount" min="1" value="1"><br>
+  <textarea id="otherDescription" placeholder="その他入特の説明"></textarea>
+</div>
+
+<button id="submitBtn">登録</button>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
+    authDomain: "fumiya-calender.firebaseapp.com",
+    projectId: "fumiya-calender",
+    storageBucket: "fumiya-calender.firebasestorage.app",
+    messagingSenderId: "946430755375",
+    appId: "1:946430755375:web:b64afd78461cb94143fcda"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const params = new URLSearchParams(window.location.search);
+  const fixedTitle = params.get("title");
+  const fixedDate = params.get("date");
+
+  if (fixedTitle) document.getElementById("title").value = fixedTitle;
+  if (fixedDate) document.getElementById("date").value = fixedDate;
+
+  let idols = [];
+
+  async function loadIdols() {
+    const snapshot = await getDocs(collection(db, "idols"));
+
+    snapshot.forEach(docSnap => {
+      idols.push(docSnap.data());
+    });
+  }
+
+  loadIdols();
+
+  const idolSearch = document.getElementById("idolSearch");
+  const idolSearchResults = document.getElementById("idolSearchResults");
+
+  idolSearch.addEventListener("input", function () {
+    const keyword = idolSearch.value.toLowerCase();
+    idolSearchResults.innerHTML = "";
+
+    document.getElementById("idolId").value = "";
+    document.getElementById("idolName").value = "";
+
+    if (keyword === "") return;
+
+    const results = idols.filter(idol =>
+      idol.name.toLowerCase().includes(keyword)
+    );
+
+    results.forEach(idol => {
+      const li = document.createElement("li");
+      li.textContent = idol.name;
+
+      li.addEventListener("click", function () {
+        idolSearch.value = idol.name;
+        document.getElementById("idolId").value = idol.idolId;
+        document.getElementById("idolName").value = idol.name;
+        idolSearchResults.innerHTML = "";
+      });
+
+      idolSearchResults.appendChild(li);
+    });
+  });
+
+  function generateTimes(startHour = 8, endHour = 23) {
+    const times = [];
+
+    for (let h = startHour; h <= endHour; h++) {
+      for (let m = 0; m < 60; m += 5) {
+        const hh = String(h).padStart(2, "0");
+        const mm = String(m).padStart(2, "0");
+        times.push(`${hh}:${mm}`);
+      }
+    }
+
+    return times;
+  }
+
+  const allTimes = generateTimes(8, 23);
+
+  function setTimeOptions(selectId, times) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = `<option value="">選択してください</option>`;
+
+    times.forEach(time => {
+      const option = document.createElement("option");
+      option.value = time;
+      option.textContent = time;
+      select.appendChild(option);
+    });
+  }
+
+  setTimeOptions("startTime", allTimes);
+  setTimeOptions("endTime", allTimes);
+  setTimeOptions("benefitStartTime", allTimes);
+  setTimeOptions("benefitEndTime", allTimes);
+
+  document.getElementById("startTime").addEventListener("change", function () {
+    const start = this.value;
+    const filtered = allTimes.filter(t => t > start);
+    setTimeOptions("endTime", filtered);
+  });
+
+  document.getElementById("benefitStartTime").addEventListener("change", function () {
+    const start = this.value;
+    const filtered = allTimes.filter(t => t > start);
+    setTimeOptions("benefitEndTime", filtered);
+  });
+
+  function getSelectedBenefits() {
+    const benefits = [];
+
+    document.querySelectorAll(".benefitCheck").forEach(check => {
+      if (check.checked) {
+        const name = check.value;
+        const countInput = document.querySelector(`.benefitCount[data-benefit="${name}"]`);
+        const count = Number(countInput.value);
+
+        benefits.push({
+          name: name,
+          count: count,
+          description: ""
+        });
+      }
+    });
+
+    if (document.getElementById("otherCheck").checked) {
+      const otherText = document.getElementById("otherText").value;
+      const otherCount = Number(document.getElementById("otherCount").value);
+      const otherDescription = document.getElementById("otherDescription").value;
+
+      if (otherText) {
+        benefits.push({
+          name: otherText,
+          count: otherCount,
+          description: otherDescription
+        });
+      }
+    }
+
+    return benefits;
+  }
+
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const title = document.getElementById("title").value;
+    const date = document.getElementById("date").value;
+
+    const idolId = document.getElementById("idolId").value;
+    const idolName = document.getElementById("idolName").value;
+
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+
+    const benefitStartTime = document.getElementById("benefitStartTime").value;
+    const benefitEndTime = document.getElementById("benefitEndTime").value;
+    const benefitTime = benefitStartTime && benefitEndTime
+      ? `${benefitStartTime}-${benefitEndTime}`
+      : "";
+
+    const benefits = getSelectedBenefits();
+
+    if (!title || !date || !idolId || !idolName) {
+      alert("イベント名・日付・出演アイドルを入力してください");
+      return;
+    }
+
+    const appearance = {
+      idolId: Number(idolId),
+      idolName: idolName,
+      startTime: startTime,
+      endTime: endTime,
+      benefitTime: benefitTime,
+      benefits: benefits
+    };
+
+    const eventsSnapshot = await getDocs(collection(db, "events"));
+
+    let existingDocId = null;
+    let existingAppearances = [];
+
+    eventsSnapshot.forEach(docSnap => {
+      const event = docSnap.data();
+
+      if (event.title === title && event.date === date) {
+        existingDocId = docSnap.id;
+        existingAppearances = event.appearances || [];
+      }
+    });
+
+    if (existingDocId) {
+      const alreadyExists = existingAppearances.some(a => Number(a.idolId) === Number(idolId));
+
+      if (alreadyExists) {
+        alert("このイベントには既に登録されています");
+        return;
       }
 
-      // ⭐ お気に入り表示
-      document.getElementById("showFavorites").addEventListener("click", function () {
-        const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-
-        const filtered = data.events.filter(e =>
-          e.appearances.some(a => favorites.includes(a.idolId))
-        );
-
-        calendar.removeAllEvents();
-        calendar.addEventSource(convertEvents(filtered));
+      await updateDoc(doc(db, "events", existingDocId), {
+        appearances: arrayUnion(appearance)
       });
 
-      // 🔄 全表示
-      document.getElementById("showAll").addEventListener("click", function () {
-        calendar.removeAllEvents();
-        calendar.addEventSource(convertEvents(data.events));
+    } else {
+      await addDoc(collection(db, "events"), {
+        title: title,
+        date: date,
+        appearances: [appearance]
       });
+    }
 
-      // 🔍 検索（←これを残す）
-      const searchInput = document.getElementById("searchInput");
-      const searchResults = document.getElementById("searchResults");
+    alert("登録完了！");
+  });
+</script>
 
-      searchInput.addEventListener("input", function () {
-        const keyword = searchInput.value.toLowerCase();
-        searchResults.innerHTML = "";
-
-        if (keyword === "") return;
-
-        data.idols.forEach(idol => {
-          if (idol.name.toLowerCase().includes(keyword)) {
-            const li = document.createElement("li");
-
-            const link = document.createElement("a");
-            link.textContent = idol.name;
-            link.href = `idol.html?id=${idol.id}`;
-
-            li.appendChild(link);
-            searchResults.appendChild(li);
-          }
-        });
-
-        data.events.forEach(event => {
-          if (event.title.toLowerCase().includes(keyword)) {
-            const li = document.createElement("li");
-
-            const link = document.createElement("a");
-            link.textContent = "【イベント】" + event.title;
-            link.href = `event.html?title=${encodeURIComponent(event.title)}&date=${event.date}`;
-
-            li.appendChild(link);
-            searchResults.appendChild(li);
-          }
-        });
-      });
-
-    });
-});
+</body>
+</html>
