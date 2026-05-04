@@ -180,10 +180,17 @@
 
     if (keyword === "") return;
 
-    const results = idols.filter(idol =>
-      idol.name.toLowerCase().includes(keyword)
-    );
+    const results = idols.filter(idol => {
+  const name = idol.name || "";
+  const kana = idol.kana || "";
+  const aliases = idol.aliases || [];
 
+  return (
+    name.toLowerCase().includes(keyword) ||
+    kana.toLowerCase().includes(keyword) ||
+    aliases.some(alias => alias.toLowerCase().includes(keyword))
+  );
+});
     results.forEach(idol => {
       const li = document.createElement("li");
       li.textContent = idol.name;
