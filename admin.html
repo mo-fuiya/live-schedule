@@ -22,24 +22,11 @@
 
     button {
       padding: 8px 12px;
-      margin: 4px;
+      margin: 4px 0;
       border: 1px solid #ccc;
       background: white;
       border-radius: 6px;
       cursor: pointer;
-    }
-
-    button.selected {
-      background: #333;
-      color: white;
-    }
-
-    .time-buttons {
-      margin-bottom: 16px;
-    }
-
-    .time-buttons button {
-      font-size: 13px;
     }
 
     .section {
@@ -53,6 +40,25 @@
       background: #333;
       color: white;
       font-weight: bold;
+    }
+
+    #idolSearchResults {
+      max-width: 420px;
+      background: white;
+      border: 1px solid #ddd;
+      padding: 0;
+      margin-top: -6px;
+      list-style: none;
+    }
+
+    #idolSearchResults li {
+      padding: 8px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    #idolSearchResults li:hover {
+      background: #f0f0f0;
     }
   </style>
 </head>
@@ -70,34 +76,32 @@
   <p>日付</p>
   <input id="date" type="date">
 
-  <p>出演アイドル</p>
-  <select id="idolSelect">
-    <option value="">選択してください</option>
-  </select>
+  <p>出演アイドル検索</p>
+  <input id="idolSearch" placeholder="アイドル名を入力">
+  <ul id="idolSearchResults"></ul>
+
+  <input type="hidden" id="idolId">
+  <input type="hidden" id="idolName">
 </div>
 
 <div class="section">
   <h3>出演時間</h3>
 
   <p>出演開始</p>
-  <input id="startTime" readonly placeholder="開始時間を選択">
-  <div id="startTimeButtons" class="time-buttons"></div>
+  <select id="startTime"></select>
 
   <p>出演終了</p>
-  <input id="endTime" readonly placeholder="終了時間を選択">
-  <div id="endTimeButtons" class="time-buttons"></div>
+  <select id="endTime"></select>
 </div>
 
 <div class="section">
   <h3>特典会時間</h3>
 
   <p>特典会開始</p>
-  <input id="benefitStartTime" readonly placeholder="開始時間を選択">
-  <div id="benefitStartButtons" class="time-buttons"></div>
+  <select id="benefitStartTime"></select>
 
   <p>特典会終了</p>
-  <input id="benefitEndTime" readonly placeholder="終了時間を選択">
-  <div id="benefitEndButtons" class="time-buttons"></div>
+  <select id="benefitEndTime"></select>
 </div>
 
 <div class="section">
@@ -152,25 +156,48 @@
   if (fixedTitle) document.getElementById("title").value = fixedTitle;
   if (fixedDate) document.getElementById("date").value = fixedDate;
 
-  const idolSelect = document.getElementById("idolSelect");
   let idols = [];
 
   async function loadIdols() {
     const snapshot = await getDocs(collection(db, "idols"));
 
     snapshot.forEach(docSnap => {
-      const idol = docSnap.data();
-      idols.push(idol);
-
-      const option = document.createElement("option");
-      option.value = idol.idolId;
-      option.textContent = idol.name;
-
-      idolSelect.appendChild(option);
+      idols.push(docSnap.data());
     });
   }
 
   loadIdols();
+
+  const idolSearch = document.getElementById("idolSearch");
+  const idolSearchResults = document.getElementById("idolSearchResults");
+
+  idolSearch.addEventListener("input", function () {
+    const keyword = idolSearch.value.toLowerCase();
+    idolSearchResults.innerHTML = "";
+
+    document.getElementById("idolId").value = "";
+    document.getElementById("idolName").value = "";
+
+    if (keyword === "") return;
+
+    const results = idols.filter(idol =>
+      idol.name.toLowerCase().includes(keyword)
+    );
+
+    results.forEach(idol => {
+      const li = document.createElement("li");
+      li.textContent = idol.name;
+
+      li.addEventListener("click", function () {
+        idolSearch.value = idol.name;
+        document.getElementById("idolId").value = idol.idolId;
+        document.getElementById("idolName").value = idol.name;
+        idolSearchResults.innerHTML = "";
+      });
+
+      idolSearchResults.appendChild(li);
+    });
+  });
 
   function generateTimes(startHour = 8, endHour = 23) {
     const times = [];
@@ -188,55 +215,34 @@
 
   const allTimes = generateTimes(8, 23);
 
-  function renderTimeButtons(containerId, inputId, options = {}) {
-    const container = document.getElementById(containerId);
-    const input = document.getElementById(inputId);
-
-    container.innerHTML = "";
-
-    let times = [...allTimes];
-
-    if (options.afterTime) {
-      times = times.filter(t => t > options.afterTime);
-    }
+  function setTimeOptions(selectId, times) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = `<option value="">選択してください</option>`;
 
     times.forEach(time => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = time;
-
-      btn.addEventListener("click", () => {
-        input.value = time;
-
-        container.querySelectorAll("button").forEach(b => {
-          b.classList.remove("selected");
-        });
-
-        btn.classList.add("selected");
-
-        if (inputId === "startTime") {
-          document.getElementById("endTime").value = "";
-          renderTimeButtons("endTimeButtons", "endTime", {
-            afterTime: time
-          });
-        }
-
-        if (inputId === "benefitStartTime") {
-          document.getElementById("benefitEndTime").value = "";
-          renderTimeButtons("benefitEndButtons", "benefitEndTime", {
-            afterTime: time
-          });
-        }
-      });
-
-      container.appendChild(btn);
+      const option = document.createElement("option");
+      option.value = time;
+      option.textContent = time;
+      select.appendChild(option);
     });
   }
 
-  renderTimeButtons("startTimeButtons", "startTime");
-  renderTimeButtons("endTimeButtons", "endTime");
-  renderTimeButtons("benefitStartButtons", "benefitStartTime");
-  renderTimeButtons("benefitEndButtons", "benefitEndTime");
+  setTimeOptions("startTime", allTimes);
+  setTimeOptions("endTime", allTimes);
+  setTimeOptions("benefitStartTime", allTimes);
+  setTimeOptions("benefitEndTime", allTimes);
+
+  document.getElementById("startTime").addEventListener("change", function () {
+    const start = this.value;
+    const filtered = allTimes.filter(t => t > start);
+    setTimeOptions("endTime", filtered);
+  });
+
+  document.getElementById("benefitStartTime").addEventListener("change", function () {
+    const start = this.value;
+    const filtered = allTimes.filter(t => t > start);
+    setTimeOptions("benefitEndTime", filtered);
+  });
 
   function getSelectedBenefits() {
     const benefits = [];
@@ -273,12 +279,11 @@
   }
 
   document.getElementById("submitBtn").addEventListener("click", async () => {
-
     const title = document.getElementById("title").value;
     const date = document.getElementById("date").value;
 
-    const idolId = String(idolSelect.value);
-    const idol = idols.find(i => String(i.idolId) === idolId);
+    const idolId = document.getElementById("idolId").value;
+    const idolName = document.getElementById("idolName").value;
 
     const startTime = document.getElementById("startTime").value;
     const endTime = document.getElementById("endTime").value;
@@ -291,14 +296,14 @@
 
     const benefits = getSelectedBenefits();
 
-    if (!title || !date || !idolId || !idol) {
+    if (!title || !date || !idolId || !idolName) {
       alert("イベント名・日付・出演アイドルを入力してください");
       return;
     }
 
     const appearance = {
       idolId: Number(idolId),
-      idolName: idol.name,
+      idolName: idolName,
       startTime: startTime,
       endTime: endTime,
       benefitTime: benefitTime,
