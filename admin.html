@@ -3,6 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <title>イベント登録</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      background: #f7f7f7;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      max-width: 420px;
+      padding: 8px;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 8px 12px;
+      margin: 4px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button.selected {
+      background: #333;
+      color: white;
+    }
+
+    .time-buttons {
+      margin-bottom: 16px;
+    }
+
+    .time-buttons button {
+      font-size: 13px;
+    }
+
+    .section {
+      background: white;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 8px;
+    }
+
+    #submitBtn {
+      background: #333;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
@@ -11,52 +63,69 @@
 
 <h1>イベント登録</h1>
 
-<p>イベント名</p>
-<input id="title">
+<div class="section">
+  <p>イベント名</p>
+  <input id="title">
 
-<p>日付</p>
-<input id="date" type="date">
+  <p>日付</p>
+  <input id="date" type="date">
 
-<p>出演アイドル</p>
-<select id="idolSelect">
-  <option value="">選択してください</option>
-</select>
+  <p>出演アイドル</p>
+  <select id="idolSelect">
+    <option value="">選択してください</option>
+  </select>
+</div>
 
-<p>出演開始</p>
-<input id="startTime" placeholder="18:00">
+<div class="section">
+  <h3>出演時間</h3>
 
-<p>出演終了</p>
-<input id="endTime" placeholder="18:30">
+  <p>出演開始</p>
+  <input id="startTime" readonly placeholder="開始時間を選択">
+  <div id="startTimeButtons" class="time-buttons"></div>
 
-<p>特典会時間</p>
-<input id="benefitTime" placeholder="20:00-21:00">
+  <p>出演終了</p>
+  <input id="endTime" readonly placeholder="終了時間を選択">
+  <div id="endTimeButtons" class="time-buttons"></div>
+</div>
 
-<h3>入特</h3>
+<div class="section">
+  <h3>特典会時間</h3>
 
-<label><input type="checkbox" class="benefitCheck" value="サインなしチェキ券"> サインなしチェキ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="サインなしチェキ券" min="1" value="1"><br>
+  <p>特典会開始</p>
+  <input id="benefitStartTime" readonly placeholder="開始時間を選択">
+  <div id="benefitStartButtons" class="time-buttons"></div>
 
-<label><input type="checkbox" class="benefitCheck" value="サインありチェキ券"> サインありチェキ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="サインありチェキ券" min="1" value="1"><br>
+  <p>特典会終了</p>
+  <input id="benefitEndTime" readonly placeholder="終了時間を選択">
+  <div id="benefitEndButtons" class="time-buttons"></div>
+</div>
 
-<label><input type="checkbox" class="benefitCheck" value="コメントありチェキ券"> コメントありチェキ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="コメントありチェキ券" min="1" value="1"><br>
+<div class="section">
+  <h3>入特</h3>
 
-<label><input type="checkbox" class="benefitCheck" value="写メ券"> 写メ券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1"><br>
+  <label><input type="checkbox" class="benefitCheck" value="サインなしチェキ券"> サインなしチェキ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="サインなしチェキ券" min="1" value="1"><br>
 
-<label><input type="checkbox" class="benefitCheck" value="動画券"> 動画券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1"><br>
+  <label><input type="checkbox" class="benefitCheck" value="サインありチェキ券"> サインありチェキ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="サインありチェキ券" min="1" value="1"><br>
 
-<label><input type="checkbox" class="benefitCheck" value="私物サイン券"> 私物サイン券</label>
-枚数 <input type="number" class="benefitCount" data-benefit="私物サイン券" min="1" value="1"><br><br>
+  <label><input type="checkbox" class="benefitCheck" value="コメントありチェキ券"> コメントありチェキ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="コメントありチェキ券" min="1" value="1"><br>
 
-<label><input type="checkbox" id="otherCheck"> その他</label>
-<input id="otherText" placeholder="入特名">
-枚数 <input type="number" id="otherCount" min="1" value="1"><br>
-<textarea id="otherDescription" placeholder="その他入特の説明"></textarea>
+  <label><input type="checkbox" class="benefitCheck" value="写メ券"> 写メ券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="写メ券" min="1" value="1"><br>
 
-<br><br>
+  <label><input type="checkbox" class="benefitCheck" value="動画券"> 動画券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="動画券" min="1" value="1"><br>
+
+  <label><input type="checkbox" class="benefitCheck" value="私物サイン券"> 私物サイン券</label>
+  枚数 <input type="number" class="benefitCount" data-benefit="私物サイン券" min="1" value="1"><br><br>
+
+  <label><input type="checkbox" id="otherCheck"> その他</label>
+  <input id="otherText" placeholder="入特名">
+  枚数 <input type="number" id="otherCount" min="1" value="1"><br>
+  <textarea id="otherDescription" placeholder="その他入特の説明"></textarea>
+</div>
 
 <button id="submitBtn">登録</button>
 
@@ -76,14 +145,21 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  const params = new URLSearchParams(window.location.search);
+  const fixedTitle = params.get("title");
+  const fixedDate = params.get("date");
+
+  if (fixedTitle) document.getElementById("title").value = fixedTitle;
+  if (fixedDate) document.getElementById("date").value = fixedDate;
+
   const idolSelect = document.getElementById("idolSelect");
   let idols = [];
 
   async function loadIdols() {
     const snapshot = await getDocs(collection(db, "idols"));
 
-    snapshot.forEach(doc => {
-      const idol = doc.data();
+    snapshot.forEach(docSnap => {
+      const idol = docSnap.data();
       idols.push(idol);
 
       const option = document.createElement("option");
@@ -95,6 +171,72 @@
   }
 
   loadIdols();
+
+  function generateTimes(startHour = 8, endHour = 23) {
+    const times = [];
+
+    for (let h = startHour; h <= endHour; h++) {
+      for (let m = 0; m < 60; m += 5) {
+        const hh = String(h).padStart(2, "0");
+        const mm = String(m).padStart(2, "0");
+        times.push(`${hh}:${mm}`);
+      }
+    }
+
+    return times;
+  }
+
+  const allTimes = generateTimes(8, 23);
+
+  function renderTimeButtons(containerId, inputId, options = {}) {
+    const container = document.getElementById(containerId);
+    const input = document.getElementById(inputId);
+
+    container.innerHTML = "";
+
+    let times = [...allTimes];
+
+    if (options.afterTime) {
+      times = times.filter(t => t > options.afterTime);
+    }
+
+    times.forEach(time => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = time;
+
+      btn.addEventListener("click", () => {
+        input.value = time;
+
+        container.querySelectorAll("button").forEach(b => {
+          b.classList.remove("selected");
+        });
+
+        btn.classList.add("selected");
+
+        if (inputId === "startTime") {
+          document.getElementById("endTime").value = "";
+          renderTimeButtons("endTimeButtons", "endTime", {
+            afterTime: time
+          });
+        }
+
+        if (inputId === "benefitStartTime") {
+          document.getElementById("benefitEndTime").value = "";
+          renderTimeButtons("benefitEndButtons", "benefitEndTime", {
+            afterTime: time
+          });
+        }
+      });
+
+      container.appendChild(btn);
+    });
+  }
+
+  renderTimeButtons("startTimeButtons", "startTime");
+  renderTimeButtons("endTimeButtons", "endTime");
+  renderTimeButtons("benefitStartButtons", "benefitStartTime");
+  renderTimeButtons("benefitEndButtons", "benefitEndTime");
 
   function getSelectedBenefits() {
     const benefits = [];
@@ -135,22 +277,27 @@
     const title = document.getElementById("title").value;
     const date = document.getElementById("date").value;
 
-    const idolId = Number(idolSelect.value);
-    const idol = idols.find(i => Number(i.idolId) === idolId);
+    const idolId = String(idolSelect.value);
+    const idol = idols.find(i => String(i.idolId) === idolId);
 
     const startTime = document.getElementById("startTime").value;
     const endTime = document.getElementById("endTime").value;
-    const benefitTime = document.getElementById("benefitTime").value;
+
+    const benefitStartTime = document.getElementById("benefitStartTime").value;
+    const benefitEndTime = document.getElementById("benefitEndTime").value;
+    const benefitTime = benefitStartTime && benefitEndTime
+      ? `${benefitStartTime}-${benefitEndTime}`
+      : "";
 
     const benefits = getSelectedBenefits();
 
-    if (!title || !date || !idol) {
+    if (!title || !date || !idolId || !idol) {
       alert("イベント名・日付・出演アイドルを入力してください");
       return;
     }
 
     const appearance = {
-      idolId: idolId,
+      idolId: Number(idolId),
       idolName: idol.name,
       startTime: startTime,
       endTime: endTime,
@@ -173,8 +320,7 @@
     });
 
     if (existingDocId) {
-
-      const alreadyExists = existingAppearances.some(a => a.idolId === idolId);
+      const alreadyExists = existingAppearances.some(a => Number(a.idolId) === Number(idolId));
 
       if (alreadyExists) {
         alert("このイベントには既に登録されています");
@@ -186,13 +332,11 @@
       });
 
     } else {
-
       await addDoc(collection(db, "events"), {
         title: title,
         date: date,
         appearances: [appearance]
       });
-
     }
 
     alert("登録完了！");
