@@ -178,7 +178,7 @@
       idols.push(docSnap.data());
     });
 
-    idols.sort((a, b) => String(a.name).localeCompare(String(b.name), "ja"));
+    idols.sort((a, b) => Number(a.idolId) - Number(b.idolId));
     renderIdolDropdown(idols);
   }
 
