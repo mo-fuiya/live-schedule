@@ -71,6 +71,14 @@
 
 <h1>イベント登録</h1>
 
+<!-- ★ここ追加 -->
+<div class="section">
+  <h3>X投稿から読み込み</h3>
+  <input id="xUrl" placeholder="Xの投稿URL">
+  <button onclick="loadFromX()">読み込み</button>
+  <textarea id="xText" rows="6" placeholder="読み込んだ内容"></textarea>
+</div>
+
 <div class="section">
   <p>イベント名</p>
   <input id="title">
@@ -141,7 +149,7 @@
   import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyBk42gV5BH_ZiM79DSKPqAKXWU44REVpngk",
+    apiKey: "AIzaSy...",
     authDomain: "fumiya-calender.firebaseapp.com",
     projectId: "fumiya-calender",
     storageBucket: "fumiya-calender.firebasestorage.app",
@@ -152,24 +160,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const params = new URLSearchParams(window.location.search);
-  const fixedTitle = params.get("title");
-  const fixedDate = params.get("date");
-
-  if (fixedTitle) document.getElementById("title").value = fixedTitle;
-  if (fixedDate) document.getElementById("date").value = fixedDate;
-
   let idols = [];
-
-  function normalizeText(text) {
-    return String(text || "").toLowerCase().trim();
-  }
-
-  function getAliases(idol) {
-    if (Array.isArray(idol.aliases)) return idol.aliases;
-    if (typeof idol.aliases === "string") return [idol.aliases];
-    return [];
-  }
 
   async function loadIdols() {
     const snapshot = await getDocs(collection(db, "idols"));
@@ -204,184 +195,52 @@
 
   loadIdols();
 
-  const idolSearch = document.getElementById("idolSearch");
+  // ★ここ追加（X読み込み）
+  window.loadFromX = async function () {
+    const url = document.getElementById("xUrl").value;
 
-  idolSearch.addEventListener("focus", function () {
-    renderIdolDropdown(idols);
-  });
-
-  idolSearch.addEventListener("input", function () {
-    const keyword = normalizeText(idolSearch.value);
-
-    document.getElementById("idolId").value = "";
-    document.getElementById("idolName").value = "";
-    document.getElementById("selectedIdol").textContent = "未選択";
-
-    if (keyword === "") {
-      renderIdolDropdown(idols);
+    if (!url) {
+      alert("URLを入力してください");
       return;
     }
 
-    const results = idols.filter(idol => {
-      const name = normalizeText(idol.name);
-      const kana = normalizeText(idol.kana);
-      const aliases = getAliases(idol).map(alias => normalizeText(alias));
+    try {
+      const res = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
 
-      return (
-        name.includes(keyword) ||
-        kana.includes(keyword) ||
-        aliases.some(alias => alias.includes(keyword))
-      );
-    });
+      const html = data.html || "";
 
-    renderIdolDropdown(results);
-  });
+      const text = html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&amp;/g, "&")
+        .trim();
 
-  function generateTimes(startHour = 8, endHour = 23) {
-    const times = [];
+      document.getElementById("xText").value = text;
 
-    for (let h = startHour; h <= endHour; h++) {
-      for (let m = 0; m < 60; m += 5) {
-        const hh = String(h).padStart(2, "0");
-        const mm = String(m).padStart(2, "0");
-        times.push(`${hh}:${mm}`);
-      }
+      applyToForm(text);
+
+    } catch (e) {
+      console.error(e);
+      alert("取得失敗");
     }
-
-    return times;
   }
 
-  const allTimes = generateTimes(8, 23);
+  function applyToForm(text) {
+    const lines = text.split("\n").filter(l => l.trim());
 
-  function setTimeOptions(selectId, times) {
-    const select = document.getElementById(selectId);
-    select.innerHTML = `<option value="">選択してください</option>`;
+    if (lines[0]) {
+      document.getElementById("title").value = lines[0];
+    }
 
-    times.forEach(time => {
-      const option = document.createElement("option");
-      option.value = time;
-      option.textContent = time;
-      select.appendChild(option);
-    });
+    const match = text.match(/(\d{1,2})[\/月](\d{1,2})/);
+    if (match) {
+      const y = new Date().getFullYear();
+      const m = match[1].padStart(2, "0");
+      const d = match[2].padStart(2, "0");
+      document.getElementById("date").value = `${y}-${m}-${d}`;
+    }
   }
-
-  setTimeOptions("startTime", allTimes);
-  setTimeOptions("endTime", allTimes);
-  setTimeOptions("benefitStartTime", allTimes);
-  setTimeOptions("benefitEndTime", allTimes);
-
-  document.getElementById("startTime").addEventListener("change", function () {
-    const start = this.value;
-    setTimeOptions("endTime", allTimes.filter(t => t > start));
-  });
-
-  document.getElementById("benefitStartTime").addEventListener("change", function () {
-    const start = this.value;
-    setTimeOptions("benefitEndTime", allTimes.filter(t => t > start));
-  });
-
-  function getSelectedBenefits() {
-    const benefits = [];
-
-    document.querySelectorAll(".benefitCheck").forEach(check => {
-      if (check.checked) {
-        const name = check.value;
-        const countInput = document.querySelector(`.benefitCount[data-benefit="${name}"]`);
-        const count = Number(countInput.value);
-
-        benefits.push({
-          name: name,
-          count: count,
-          description: ""
-        });
-      }
-    });
-
-    if (document.getElementById("otherCheck").checked) {
-      const otherText = document.getElementById("otherText").value;
-      const otherCount = Number(document.getElementById("otherCount").value);
-      const otherDescription = document.getElementById("otherDescription").value;
-
-      if (otherText) {
-        benefits.push({
-          name: otherText,
-          count: otherCount,
-          description: otherDescription
-        });
-      }
-    }
-
-    return benefits;
-  }
-
-  document.getElementById("submitBtn").addEventListener("click", async () => {
-    const title = document.getElementById("title").value;
-    const date = document.getElementById("date").value;
-
-    const idolId = document.getElementById("idolId").value;
-    const idolName = document.getElementById("idolName").value;
-
-    const startTime = document.getElementById("startTime").value;
-    const endTime = document.getElementById("endTime").value;
-
-    const benefitStartTime = document.getElementById("benefitStartTime").value;
-    const benefitEndTime = document.getElementById("benefitEndTime").value;
-    const benefitTime = benefitStartTime && benefitEndTime
-      ? `${benefitStartTime}-${benefitEndTime}`
-      : "";
-
-    const benefits = getSelectedBenefits();
-
-    if (!title || !date || !idolId || !idolName) {
-      alert("イベント名・日付・出演アイドルを入力してください");
-      return;
-    }
-
-    const appearance = {
-      idolId: Number(idolId),
-      idolName: idolName,
-      startTime: startTime,
-      endTime: endTime,
-      benefitTime: benefitTime,
-      benefits: benefits
-    };
-
-    const eventsSnapshot = await getDocs(collection(db, "events"));
-
-    let existingDocId = null;
-    let existingAppearances = [];
-
-    eventsSnapshot.forEach(docSnap => {
-      const event = docSnap.data();
-
-      if (event.title === title && event.date === date) {
-        existingDocId = docSnap.id;
-        existingAppearances = event.appearances || [];
-      }
-    });
-
-    if (existingDocId) {
-      const alreadyExists = existingAppearances.some(a => Number(a.idolId) === Number(idolId));
-
-      if (alreadyExists) {
-        alert("このイベントには既に登録されています");
-        return;
-      }
-
-      await updateDoc(doc(db, "events", existingDocId), {
-        appearances: arrayUnion(appearance)
-      });
-
-    } else {
-      await addDoc(collection(db, "events"), {
-        title: title,
-        date: date,
-        appearances: [appearance]
-      });
-    }
-
-    alert("登録完了！");
-  });
 </script>
 
 </body>
